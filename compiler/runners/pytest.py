@@ -29,7 +29,7 @@ COMMAND = "py.test --tb=short"
 Terminal command to start nosetests.
 """
 
-if system() == 'windows':
+if system().lower() == 'windows':
     COMMAND = "py.test.exe --tb=short"
 
 
