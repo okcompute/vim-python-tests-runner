@@ -71,8 +71,12 @@ If none of these are available, tests will be ran in system environment.
 
                                                          *'g:runners_python'*
 To select runner for *Python* , use this global option:
-default:
-    let g:runners_python = 'nose'
+
+let g:runners_python = 'nose'
+
+Available runners: 'nose' or 'pytest'
+
+Default: 'pytest'
 
 
 ==============================================================================

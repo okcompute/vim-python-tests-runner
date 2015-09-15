@@ -146,7 +146,7 @@ import code_analyzer
 import vim
 position = vim.current.window.cursor
 filename  = vim.current.buffer.name
-runner = vim.eval("g:vim_python_runner")
+runner = vim.eval("g:runners_python")
 separator = "::" if runner == 'pytest' else "."
 try:
     test_function = code_analyzer.get_test_function_at(
@@ -190,7 +190,7 @@ import code_analyzer
 import vim
 position = vim.current.window.cursor
 filename  = vim.current.buffer.name
-runner = vim.eval("g:vim_python_runner")
+runner = vim.eval("g:runners_python")
 separator = "::" if runner == 'pytest' else "."
 try:
     test_case = code_analyzer.get_test_case_at(
@@ -243,16 +243,16 @@ function! runners#make_interactive_command()
     elseif has('win32')
         let l:cmd = ":!start "
     endif
-    if g:vim_python_runner == 'nose'
+    if g:runners_python == 'nose'
         return l:cmd."nosetests -s "
-    elseif g:vim_python_runner == 'pytest'
+    elseif g:runners_python == 'pytest'
         if has('win32') || has('win64')
             return l:cmd."py.test.exe -s "
         else
             return l:cmd."py.test -s "
         endif
     else
-        echoerr "Unknown test runner!: ".g:vim_python_runner
+        echoerr "Unknown test runner!: ".g:runners_python
     endif
 endfunction
 

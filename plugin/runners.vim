@@ -7,8 +7,8 @@ if !has('python')
 endif
 
 " Default runner is `pytest`
-if !exists("g:vim_python_runner")
-    let g:vim_python_runner= 'pytest'
+if !exists("g:runners_python")
+    let g:runners_python= 'pytest'
 endif
 
 " Command Mappings
