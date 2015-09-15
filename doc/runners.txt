@@ -19,13 +19,13 @@ INTRODUCTION                                            *runners*
 
 This plugin improve on Vim compiler option for running tests.
 
-It enables:
+Main features:
 
     -   Isolate tests running session. Run a specific test, a test case, a test
         module or all tests inside a git repository.
     -   Memorize last test ran. The last test will run if commands are called
         in `non-test` source file.
-    -   Improved vim *errorformat* detection. *quickfix* window will show the
+    -   Improved Vim *errorformat* detection. *quickfix* window will show the
         correct error lines (surprisingly, it was not intuitive as one would
         think to enable!)
 
