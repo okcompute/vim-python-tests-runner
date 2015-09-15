@@ -1,5 +1,5 @@
 " Vim compiler file
-" Compiler:	Nose compiler for running python tests.
+" Compiler:	Compiler for running tests.
 " Maintainer:	Pascal Lalancette <okcompute@icloud.com>
 " Created: November 29th 2014
 

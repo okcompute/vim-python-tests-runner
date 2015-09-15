@@ -1,6 +1,6 @@
 " vim:fdm=marker
 "
-" Location: autoload/nose.vim
+" Location: autoload/runners.vim
 " Author: Pascal Lalancette (okcompute@icloud.com)
 
 
@@ -29,13 +29,13 @@ call s:setup_python()
 
 " VirtualEnv {{{
 
-function! nose#prepare_virtualenv()
+function! runners#prepare_virtualenv()
     let l:old_path = $PATH
     try
-        let l:venv=nose#get_virtual_env_path()
+        let l:venv=runners#get_virtual_env_path()
     catch /^No virtualenv/
         if !exists('$VIRTUALENV')
-            echo "vim-nose: No virtualenv found!"
+            echo "vim-runners: No virtualenv found!"
             return l:old_path
         endif
     endtry
@@ -47,17 +47,17 @@ function! nose#prepare_virtualenv()
     return l:old_path
 endfunction
 
-function! nose#reset_virtualenv(old_path)
+function! runners#reset_virtualenv(old_path)
     let $PATH = a:old_path
 endfunction
 
-function! nose#get_virtual_env_path()
+function! runners#get_virtual_env_path()
     try
-        return nose#read_virtualenv_config_from_file()
+        return runners#read_virtualenv_config_from_file()
     catch /^Configuration not found/
     endtry
     try
-        return nose#read_virtualenv_config_from_git()
+        return runners#read_virtualenv_config_from_git()
     catch /^Configuration not found/
     endtry
     throw "No virtualenv configuration found"
@@ -67,7 +67,7 @@ endfunction
 
 " '.venv' config file {{{
 "
-function! nose#read_virtualenv_config_from_file()
+function! runners#read_virtualenv_config_from_file()
     let venv_config = findfile(".venv", "./;")
     if !filereadable(venv_config)
         throw "Configuration not found.`.venv` file not found."
@@ -102,12 +102,12 @@ EOF
 
 " git {{{
 
-function! nose#read_virtualenv_config_from_git()
-    let l:venv =  system('git config vim-nose.venv')
+function! runners#read_virtualenv_config_from_git()
+    let l:venv =  system('git config vim-runners.venv')
     if v:shell_error
         throw "Configuration not found. Git not available or virtualenv configuration not set."
     endif
-    let l:root = nose#get_git_repository_root()
+    let l:root = runners#get_git_repository_root()
 python << EOF
 import vim
 import os
@@ -128,7 +128,7 @@ EOF
     return l:path
 endfunction
 
-function! nose#get_git_repository_root()
+function! runners#get_git_repository_root()
     let root =  substitute(system('git rev-parse --show-toplevel'), "\n", "", "")
     if v:shell_error
         throw "Git not available for project root discovery!"
@@ -140,7 +140,7 @@ endfunction
 
 " Test finder functions {{{
 
-function! nose#get_current_test()
+function! runners#get_current_test()
 python << EOF
 import code_analyzer
 import vim
@@ -155,8 +155,8 @@ try:
         separator,
     )
 except:
-    # No function found because there is an error in the parsed file. Let nose
-    # found the error too and show it in the quickfix window.
+    # No function found because there is an error in the parsed file. Let the
+    # compiler found the error too and show it in the quickfix window.
     test_function = ""
     print "This did not work!"
     import sys
@@ -172,19 +172,19 @@ test = test.replace("\\", "/")
 vim.command("let l:test=\"%s\"" % test)
 EOF
     echo l:test
-    let g:nose#last_test=l:test
+    let g:runners#last_test=l:test
     return l:test
 endfunction
 
-function! nose#get_last_test()
-    return g:nose#last_test
+function! runners#get_last_test()
+    return g:runners#last_test
 endfunction
 
 " }}}
 
 " Test case finder functions {{{
 
-function! nose#get_current_case()
+function! runners#get_current_case()
 python << EOF
 import code_analyzer
 import vim
@@ -199,8 +199,8 @@ try:
         separator,
     )
 except:
-    # No test case found because there is an error in the parsed file. Let
-    nose # found the error too and show it in the quickfix window.
+    # No test case found because there is an error in the parsed file. Let the
+    # compiler found the error too and show it in the quickfix window.
     test_case = ""
 if test_case:
     separator = "::" if runner == 'pytest' else ":"
@@ -211,32 +211,32 @@ else:
 test_case = test_case.replace("\\", "/")
 vim.command("let l:test_case=\"%s\"" % test_case)
 EOF
-    let g:nose#last_case=l:test_case
+    let g:runners#last_case=l:test_case
     return l:test_case
 endfunction
 
-function! nose#get_last_case()
-    return g:nose#last_case
+function! runners#get_last_case()
+    return g:runners#last_case
 endfunction
 
 " }}}
 
 " Test module finder functions {{{
 
-function! nose#get_current_module()
-    let g:nose#last_module=expand("%:p")
-    return g:nose#last_module
+function! runners#get_current_module()
+    let g:runners#last_module=expand("%:p")
+    return g:runners#last_module
 endfunction
 
-function! nose#get_last_module()
-    return g:nose#last_module
+function! runners#get_last_module()
+    return g:runners#last_module
 endfunction
 
 " }}}
 
 " Commands selection {{{
 
-function! nose#make_interactive_command()
+function! runners#make_interactive_command()
     let l:cmd = ":!"
     if exists(":Start")
         let l:cmd = ":Start "
@@ -256,7 +256,7 @@ function! nose#make_interactive_command()
     endif
 endfunction
 
-function! nose#make_foreground_command()
+function! runners#make_foreground_command()
     if exists(":Make")
         return ":Make "
     else
@@ -268,12 +268,12 @@ endfunction
 
 " Generic run method {{{
 
-function! nose#run(interactive, get_test_method) abort
-    let old_path = nose#prepare_virtualenv()
+function! runners#run(interactive, get_test_method) abort
+    let old_path = runners#prepare_virtualenv()
     try
-        let l:args = nose#get_{a:get_test_method}()
+        let l:args = runners#get_{a:get_test_method}()
         if a:interactive
-            let l:cmd = nose#make_interactive_command()
+            let l:cmd = runners#make_interactive_command()
             " In case of test error, introduce a pause in the interactive
             " shell so the user can see what the error was!
             if has('win32')
@@ -283,15 +283,15 @@ function! nose#run(interactive, get_test_method) abort
                 let l:args = l:args." || read -p ".l:msg
             endif
         else
-            let l:cmd = nose#make_foreground_command()
+            let l:cmd = runners#make_foreground_command()
         endif
         exec l:cmd.l:args
     catch /^Vim\%((\a\+)\)\=:E121/	" catch error E121
-        echo "vim-nose: No previous run test history."
+        echo "vim-runners: No previous run test history."
     catch /^Git not available/
-        echo "vim-nose: Cannot run test command (".v:exception.")"
+        echo "vim-runners: Cannot run test command (".v:exception.")"
     finally
-        call nose#reset_virtualenv(old_path)
+        call runners#reset_virtualenv(old_path)
     endtry
 endfunction
 
@@ -299,32 +299,32 @@ endfunction
 
 " Run commands implementations {{{
 
-function! nose#run_test(bang) abort
-    call nose#run(a:bang, "current_test")
+function! runners#run_test(bang) abort
+    call runners#run(a:bang, "current_test")
 endfunction
 
-function! nose#run_last_test(bang) abort
-    call nose#run(a:bang, "last_test")
+function! runners#run_last_test(bang) abort
+    call runners#run(a:bang, "last_test")
 endfunction
 
-function! nose#run_case(bang) abort
-    call nose#run(a:bang, "current_case")
+function! runners#run_case(bang) abort
+    call runners#run(a:bang, "current_case")
 endfunction
 
-function! nose#run_last_case(bang) abort
-    call nose#run(a:bang, "last_case")
+function! runners#run_last_case(bang) abort
+    call runners#run(a:bang, "last_case")
 endfunction
 
-function! nose#run_module(bang) abort
-    call nose#run(a:bang, "current_module")
+function! runners#run_module(bang) abort
+    call runners#run(a:bang, "current_module")
 endfunction
 
-function! nose#run_last_module(bang) abort
-    call nose#run(a:bang, "last_module")
+function! runners#run_last_module(bang) abort
+    call runners#run(a:bang, "last_module")
 endfunction
 
-function! nose#run_all(bang) abort
-    call nose#run(a:bang, "git_repository_root")
+function! runners#run_all(bang) abort
+    call runners#run(a:bang, "git_repository_root")
 endfunction
 
 " }}}
