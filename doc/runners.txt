@@ -60,19 +60,48 @@ tests (if any).
                                                         *runners-virtualenv*
 
 To discover {virtualenv}, the plugin will look into three places (in order):
-    1. runners-config-file| The plugin configuration file.
+    1. venv-config-file| A virtualenv description file.
     2. |runners-config-git| An option configured in git.
     3. $VIRTUALENV environment variable
 
 If none of these are available, tests will be ran in system environment.
 
+
+                                                        *runners-venv-file*
+1.1. .venv file~
+
+Expected virtualenv configuration filename is *.venv*. It should be located at
+the root of the project.
+
+Example: Set Python {virtualenv} configuration in project X , at the
+root of the project:
+
+ \.venv             <= vim-runners virtualenv config  file
+ \venv              <= {virtualenv} folder
+ \source.py
+ \test.py
+
+The content of the file would simply be :
+.venv
+
+                                                        *runners-git-config*
+1.2. Git configuration~
+
+If you don't want to have extra file polluting your project, a local git
+configuration can be used.
+
+For example, to configure Python {virtualenv} folder which is located at \{git
+root}\venv:
+
+    git config --local vim-runners.venv venv
+
 ------------------------------------------------------------------------------
 2. Select Python runner~
 
                                                          *'g:runners_python'*
-To select runner for *Python* , use this global option:
+To select runner for *Python* , use this global option.
 
-let g:runners_python = 'nose'
+Example: let g:runners_python = 'nose'
 
 Available runners: 'nose' or 'pytest'
 
@@ -83,33 +112,6 @@ Default: 'pytest'
 CONFIGURATION                                           *runners-configuration*
 
                                                         *runners-config-file*
-1. Configuration file~
-
-Expected configuration filename is *.runners*. It should be located at the
-root of the project.
-
-Example: Set Python {virtualenv} configuration in project X , at the
-root of the project:
-
- \.runners          <= vim-runners config file
- \venv              <= {virtualenv} folder
- \source.py
- \test.py
-
-The content of the file would simply be :
-python-virtualenv = .venv
-
-
-                                                        *runners-config-git*
-2. Git configuration~
-
-If you don't want to have extra file polluting your project, a local git
-configuration can be used.
-
-For example, to configure Python {virtualenv} folder which is located at \{git
-root}\venv:
-
-    git config --local vim-runners.python-virtualenv venv
 
 ==============================================================================
 COMMANDS                                                *runners-commands*
