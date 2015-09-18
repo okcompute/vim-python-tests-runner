@@ -51,7 +51,7 @@ class TestPytestRunner(unittest.TestCase):
         input = "E   _pytest.config.ConftestImportFailure: (local('/test/conftest.py'), (<class 'ImportError'>, ImportError(\"No module named 'unknown'\",), <traceback object at 0x104226f88>))"
         expected = {
             'file_path': "/test/conftest.py",
-            'error': "No module named 'unknown'",
+            'error': "<class 'ImportError'>, ImportError(\"No module named 'unknown'\",), <traceback object at 0x104226f88>",
         }
         result = match_conftest_error(input)
         self.assertEqual(result, expected)
@@ -273,7 +273,7 @@ class TestPytestRunner(unittest.TestCase):
         result = parse(input)
         self.assertEqual(expected, result)
 
-    def test_parse_with_conftest_error(self):
+    def test_parse_with_conftest_import_failure(self):
         input = [
             "============================================================================== test session starts ===============================================================================",
             "===================================================================================== ERRORS =====================================================================================",
@@ -322,7 +322,7 @@ class TestPytestRunner(unittest.TestCase):
             "venv/lib/python3.4/site-packages/_pytest/config.py:545: in importconftest",
             "    raise ConftestImportFailure(conftestpath, sys.exc_info())",
             "E   _pytest.config.ConftestImportFailure: (local('/Users/okcompute/Developer/Git/OkBudgetBackend/okbudget/tests/conftest.py'), (<class 'ImportError'>, ImportError(\"No module named 'tata'\",), <traceback object at 0x104226f88>))",
-            "/Users/okcompute/Developer/Git/OkBudgetBackend/okbudget/tests/conftest.py:1 <No module named 'tata'>",
+            "/Users/okcompute/Developer/Git/OkBudgetBackend/okbudget/tests/conftest.py:1 <<class 'ImportError'>, ImportError(\"No module named 'tata'\",), <traceback object at 0x104226f88>>",
             "============================================================================ 1 error in 0.56 seconds =============================================================================",
         ]
         result = parse(input)
@@ -489,5 +489,71 @@ class TestPytestRunner(unittest.TestCase):
             "rdv_challenge\tests\dal\test_redis_interface.py:45: AttributeError",
             "==================== 1 failed, 273 passed in 5.10 seconds =====================",
         ]
+        result = parse(input)
+        self.assertEqual(expected, result)
+
+    def test_parse_with_conftest_type_error(self):
+        input = [
+            "============================= test session starts =============================",
+            "platform win32 -- Python 2.7.8 -- py-1.4.30 -- pytest-2.7.2",
+            "rootdir: F:\git\rdv_challenge, inifile: setup.cfg",
+            "plugins: cache, cov, flake8",
+            "collected 0 items / 1 errors",
+            " ",
+            "=================================== ERRORS ====================================",
+            "______________________________ ERROR collecting  ______________________________",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:332: in visit",
+            "    for x in Visitor(fil, rec, ignore, bf, sort).gen(self):",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:378: in gen",
+            "    for p in self.gen(subdir):",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:378: in gen",
+            "    for p in self.gen(subdir):",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:368: in gen",
+            "    if p.check(dir=1) and (rec is None or rec(p))])",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\main.py:632: in _recurse",
+            "    ihook.pytest_collect_directory(path=path, parent=self)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\main.py:162: in __getattr__",
+            "    plugins = self.config._getmatchingplugins(self.fspath)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\config.py:692: in _getmatchingplugins",
+            "    self._conftest.getconftestmodules(fspath)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\config.py:521: in getconftestmodules",
+            "    mod = self.importconftest(conftestpath)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\config.py:545: in importconftest",
+            "    raise ConftestImportFailure(conftestpath, sys.exc_info())",
+            "E   ConftestImportFailure: (local('F:\\git\\rdv_challenge\\rdv_challenge\\tests\\service\\conftest.py'), (<type 'exceptions.TypeError'>, TypeError(\"fixture() got an unexpected keyword argument 'score'\",), <traceback object at 0x060958A0>))",
+            "=========================== 1 error in 1.69 seconds ===========================",
+        ]
+        expected = [
+            "============================= test session starts =============================",
+            "platform win32 -- Python 2.7.8 -- py-1.4.30 -- pytest-2.7.2",
+            "rootdir: F:\git\rdv_challenge, inifile: setup.cfg",
+            "plugins: cache, cov, flake8",
+            "collected 0 items / 1 errors",
+            " ",
+            "=================================== ERRORS ====================================",
+            "______________________________ ERROR collecting  ______________________________",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:332: in visit",
+            "    for x in Visitor(fil, rec, ignore, bf, sort).gen(self):",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:378: in gen",
+            "    for p in self.gen(subdir):",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:378: in gen",
+            "    for p in self.gen(subdir):",
+            ".tox\rdv3.0.5\lib\site-packages\py\_path\common.py:368: in gen",
+            "    if p.check(dir=1) and (rec is None or rec(p))])",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\main.py:632: in _recurse",
+            "    ihook.pytest_collect_directory(path=path, parent=self)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\main.py:162: in __getattr__",
+            "    plugins = self.config._getmatchingplugins(self.fspath)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\config.py:692: in _getmatchingplugins",
+            "    self._conftest.getconftestmodules(fspath)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\config.py:521: in getconftestmodules",
+            "    mod = self.importconftest(conftestpath)",
+            ".tox\rdv3.0.5\lib\site-packages\_pytest\config.py:545: in importconftest",
+            "    raise ConftestImportFailure(conftestpath, sys.exc_info())",
+            "E   ConftestImportFailure: (local('F:\\git\\rdv_challenge\\rdv_challenge\\tests\\service\\conftest.py'), (<type 'exceptions.TypeError'>, TypeError(\"fixture() got an unexpected keyword argument 'score'\",), <traceback object at 0x060958A0>))",
+            "F:\\git\\rdv_challenge\\rdv_challenge\\tests\\service\\conftest.py:1 <<type 'exceptions.TypeError'>, TypeError(\"fixture() got an unexpected keyword argument 'score'\",), <traceback object at 0x060958A0>>",
+            "=========================== 1 error in 1.69 seconds ===========================",
+        ]
+        self.maxDiff = None
         result = parse(input)
         self.assertEqual(expected, result)

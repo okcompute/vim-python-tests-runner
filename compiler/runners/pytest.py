@@ -88,8 +88,8 @@ def match_conftest_error(line):
         empty.
     """
     return match_pattern(
-        r"^E\s+_pytest.config.ConftestImportFailure: "
-        "\(local\('(?P<file_path>.*)'\).*ImportError\(\"(?P<error>.*)\",\).*$",
+        r"^E\s+.*ConftestImportFailure: "
+        "\(local\('(?P<file_path>.*)'\), \((?P<error>.*)\)\)$",
         line,
     )
 
