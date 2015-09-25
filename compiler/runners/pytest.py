@@ -57,7 +57,7 @@ def match_file_location(line):
     :returns: A dictionary where the key `file_path` holds the file path and the
         key `line_no` the line number. If not matched, the dictionary is empty.
     """
-    return match_pattern(r"(?P<file_path>.*):(?P<line_no>.*):\s.*$", line)
+    return match_pattern(r"(?P<file_path>\S+):(?P<line_no>\d+):\s.*$", line)
 
 
 def match_error(line):
