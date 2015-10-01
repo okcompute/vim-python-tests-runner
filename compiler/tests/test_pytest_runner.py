@@ -7,7 +7,9 @@ from runners.pytest import (
     match_conftest_error,
     match_error,
     match_file_location,
-    match_scope_mismatch,
+    match_fixture_not_found_error,
+    match_fixture_not_found_file_location,
+    match_fixture_scope_mismatch,
     parse,
     parse_failure,
     parse_fixture_error,
@@ -19,10 +21,10 @@ class TestPytestRunner(unittest.TestCase):
 
     """Test case for runners.pytest.py module"""
 
-    def test_match_scope_mismatch(self):
+    def test_match_fixture_scope_mismatch(self):
         input = r"ScopeMismatch: Invalid something"
         expected = r"Invalid something"
-        result = match_scope_mismatch(input)
+        result = match_fixture_scope_mismatch(input)
         self.assertEqual(expected, result)
 
     def test_match_file_location(self):
@@ -60,6 +62,20 @@ class TestPytestRunner(unittest.TestCase):
             'error': "<class 'ImportError'>, ImportError(\"No module named 'unknown'\",), <traceback object at 0x104226f88>",
         }
         result = match_conftest_error(input)
+        self.assertEqual(result, expected)
+
+    def test_match_fixture_not_found_file_location(self):
+        input = r"file F:\git\my_package\my_package\tests\dal\test_something.py, line 1245"
+        expected = {"file_path": r"F:\git\my_package\my_package\tests\dal\test_something.py", "line_no": "1245"}
+        result = match_fixture_not_found_file_location(input)
+        self.assertEqual(expected, result)
+
+    def test_match_fixture_not_found_error(self):
+        input = "        fixture 'populate_redis_with_progression' not found"
+        expected = {
+            'error': "fixture 'populate_redis_with_progression' not found",
+        }
+        result = match_fixture_not_found_error(input)
         self.assertEqual(result, expected)
 
     def test_parse_fixture_error(self):
@@ -444,16 +460,16 @@ class TestPytestRunner(unittest.TestCase):
             r"my_package\tests\test_module.py ......F........",
             r" ",
             r"================================== FAILURES ===================================",
-            r"_____________ TestRedisInterface.test_challenges_progression_key ______________",
+            r"_____________ TestRedisInterface.test_somethings_progression_key ______________",
             r" ",
             r"self = <test_redis_interface.TestRedisInterface instance at 0x06CA4170>",
             r"redis = <my_package.dal.redis_interface.RedisInterface object at 0x06AFB650>",
             r" ",
-            r"    def test_challenges_progression_key(self, redis):",
-            r">       assert 'Challenge:challenges:instances:progression:123' == str(",
-            r"            redis.get_challenge_progression_key(123),",
+            r"    def test_somethings_progression_key(self, redis):",
+            r">       assert 'Something:somethings:instances:progression:123' == str(",
+            r"            redis.get_something_progression_key(123),",
             r"        )",
-            r"E       AttributeError: 'RedisInterface' object has no attribute 'get_challenge_progression_key'",
+            r"E       AttributeError: 'RedisInterface' object has no attribute 'get_something_progression_key'",
             r" ",
             r"my_package\tests\dal\test_redis_interface.py:45: AttributeError",
             r"==================== 1 failed, 273 passed in 5.10 seconds =====================",
@@ -468,16 +484,16 @@ class TestPytestRunner(unittest.TestCase):
             r"my_package\tests\test_module.py ......F........",
             r" ",
             r"================================== FAILURES ===================================",
-            r"_____________ TestRedisInterface.test_challenges_progression_key ______________",
+            r"_____________ TestRedisInterface.test_somethings_progression_key ______________",
             r" ",
             r"self = <test_redis_interface.TestRedisInterface instance at 0x06CA4170>",
             r"redis = <my_package.dal.redis_interface.RedisInterface object at 0x06AFB650>",
             r" ",
-            r"    def test_challenges_progression_key(self, redis):",
-            r">       assert 'Challenge:challenges:instances:progression:123' == str(",
-            r"            redis.get_challenge_progression_key(123),",
+            r"    def test_somethings_progression_key(self, redis):",
+            r">       assert 'Something:somethings:instances:progression:123' == str(",
+            r"            redis.get_something_progression_key(123),",
             r"        )",
-            r"E       AttributeError: 'RedisInterface' object has no attribute 'get_challenge_progression_key'",
+            r"E       AttributeError: 'RedisInterface' object has no attribute 'get_something_progression_key'",
             r" ",
             r"my_package\tests\dal\test_redis_interface.py:45: AttributeError",
             r"==================== 1 failed, 273 passed in 5.10 seconds =====================",
@@ -562,8 +578,8 @@ class TestPytestRunner(unittest.TestCase):
             r"my_package\tests\test_module.py .....................................F.....................",
             r"",
             r"================================== FAILURES ===================================",
-            r"___________ TestChallengeDAL.test_add_player_contribution_to_goals ____________",
-            r"my_package\tests\dal\test_challenge.py:1090: in test_add_player_contribution_to_goals",
+            r"___________ TestSomethingDAL.test_add_player_contribution_to_goals ____________",
+            r"my_package\tests\dal\test_something.py:1090: in test_add_player_contribution_to_goals",
             r"    assert goals == {'goal_2': {'contexts': [], 'contribution': 2.0}}",
             r"E   assert {'goal_2': {'...ribution': 0}} == {'goal_2': {'c...bution': 2.0}}",
             r"E     Differing items:",
@@ -582,15 +598,55 @@ class TestPytestRunner(unittest.TestCase):
             r"my_package\tests\test_module.py .....................................F.....................",
             r"",
             r"================================== FAILURES ===================================",
-            r"___________ TestChallengeDAL.test_add_player_contribution_to_goals ____________",
-            r"my_package\tests\dal\test_challenge.py:1090: in test_add_player_contribution_to_goals",
+            r"___________ TestSomethingDAL.test_add_player_contribution_to_goals ____________",
+            r"my_package\tests\dal\test_something.py:1090: in test_add_player_contribution_to_goals",
             r"    assert goals == {'goal_2': {'contexts': [], 'contribution': 2.0}}",
             r"E   assert {'goal_2': {'...ribution': 0}} == {'goal_2': {'c...bution': 2.0}}",
-            r"my_package\tests\dal\test_challenge.py:1090 <assert {'goal_2': {'...ribution': 0}} == {'goal_2': {'c...bution': 2.0}}>",
+            r"my_package\tests\dal\test_something.py:1090 <assert {'goal_2': {'...ribution': 0}} == {'goal_2': {'c...bution': 2.0}}>",
             r"E     Differing items:",
             r"E     {'goal_2': {'contexts': [], 'contribution': 0}} != {'goal_2': {'contexts': [], 'contribution': 2.0}}",
             r"E     Use -v to get the full diff",
             r"===================== 1 failed, 80 passed in 1.73 seconds =====================",
+        ]
+        self.maxDiff = None
+        result = parse(input)
+        self.assertEqual(expected, result)
+
+    def test_parse_with_fixture_not_found(self):
+        input = [
+            r"============================= test session starts =============================",
+            r"platform win32 -- Python 2.7.8 -- py-1.4.30 -- pytest-2.7.2",
+            r"rootdir: F:\git\my_package, inifile: setup.cfg",
+            r"plugins: cache, cov, flake8",
+            r"collected 88 items",
+            r" ",
+            r"my_package\tests\dal\test_something.py ....................................F....FFF...................F.E.F.F.......F.FF.......",
+            r" ",
+            r"=================================== ERRORS ====================================",
+            r"___ ERROR at setup of TestSomethingDAL.test_get_goals_player_contributions ____",
+            r"file F:\git\my_package\my_package\tests\dal\test_something.py, line 1245",
+            r"      def test_get_goals_player_contributions(",
+            r"        fixture 'populate_redis_with_progression' not found",
+            r"        available fixtures: pytestconfig, goals_configuration, mutable_service, force_default_settings, somethings, tmpdir, registered_somethings, populate_redis, redis, completed_somethings, service, something_dictionaries, mock_utcnow, registered_somethings_with_progression, load_service, submissions, goal_instances, somethings_with_registration, use_redis, use_mongo, dal, recwarn, monkeypatch, invalid_something_instances, registered_populations_context, registered_principal_ids, flush_redis, cov, something_instances, reward_instances, somethings_with_progression, capfd, capsys",
+            r"        use 'py.test --fixtures [testpath]' for help on them.",
+        ]
+        expected = [
+            r"============================= test session starts =============================",
+            r"platform win32 -- Python 2.7.8 -- py-1.4.30 -- pytest-2.7.2",
+            r"rootdir: F:\git\my_package, inifile: setup.cfg",
+            r"plugins: cache, cov, flake8",
+            r"collected 88 items",
+            r" ",
+            r"my_package\tests\dal\test_something.py ....................................F....FFF...................F.E.F.F.......F.FF.......",
+            r" ",
+            r"=================================== ERRORS ====================================",
+            r"___ ERROR at setup of TestSomethingDAL.test_get_goals_player_contributions ____",
+            r"file F:\git\my_package\my_package\tests\dal\test_something.py, line 1245",
+            r"      def test_get_goals_player_contributions(",
+            r"        fixture 'populate_redis_with_progression' not found",
+            r"F:\git\my_package\my_package\tests\dal\test_something.py:1245 <fixture 'populate_redis_with_progression' not found>",
+            r"        available fixtures: pytestconfig, goals_configuration, mutable_service, force_default_settings, somethings, tmpdir, registered_somethings, populate_redis, redis, completed_somethings, service, something_dictionaries, mock_utcnow, registered_somethings_with_progression, load_service, submissions, goal_instances, somethings_with_registration, use_redis, use_mongo, dal, recwarn, monkeypatch, invalid_something_instances, registered_populations_context, registered_principal_ids, flush_redis, cov, something_instances, reward_instances, somethings_with_progression, capfd, capsys",
+            r"        use 'py.test --fixtures [testpath]' for help on them.",
         ]
         self.maxDiff = None
         result = parse(input)

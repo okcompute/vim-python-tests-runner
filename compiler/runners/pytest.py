@@ -33,7 +33,7 @@ if system().lower() == 'windows':
     COMMAND = "py.test.exe --tb=short"
 
 
-def match_scope_mismatch(line):
+def match_fixture_scope_mismatch(line):
     """
     Extract error description from a *pytest's* `ScopeMismatch` exception
     output.
@@ -92,6 +92,32 @@ def match_conftest_error(line):
         "\(local\('(?P<file_path>.*)'\), \((?P<error>.*)\)\)$",
         line,
     )
+
+
+def match_fixture_not_found_file_location(line):
+    """
+    Extract filename path and line number from 'fixture not found' error report.
+
+    :param line: A string to pattern match against.
+
+    :returns: A dictionary where the key `file_path` holds the file path and the
+        key `line_no` the line number. If not matched, the dictionary is empty.
+    """
+    return match_pattern(
+        r'file (?P<file_path>.*), line (?P<line_no>.*)$',
+        line,
+    )
+
+
+def match_fixture_not_found_error(line):
+    """
+    Extract `fixture xxxx not found` error message from a string.
+
+    :param line: A string to pattern match against.
+
+    :returns: A dictionary where the key `error` holds the error description.
+    """
+    return match_pattern(r"^\s+(?P<error>fixture '.*' not found)$", line)
 
 
 def parse_failure(lines):
@@ -183,30 +209,46 @@ def parse_fixture_error(root_dir, lines):
     :param root_dir: Tested project root directory
     :param lines: list of *pytest* error output lines.
 
-    :returns: *pytest* output augmented with specially formatted lines adapted to
-        this plugin errorformat which will populate Vim clist.
+    :returns: *pytest* output augmented with specially formatted lines adapted
+        to this plugin errorformat which will populate Vim clist.
     """
     result = []
+    file_location = None
     for line in lines:
         result.append(line)
-        error = match_scope_mismatch(line)
+        # File location  can come first if the fixture error is a 'fixture not
+        # found' error type.
+        location = match_fixture_not_found_file_location(line)
+        if location:
+            file_location = location
+            continue
+        error = match_fixture_not_found_error(line)
+        if error:
+            result.append(
+                make_error_format(
+                    file_location.get('file_path', ""),
+                    file_location.get('line_no', ""),
+                    error['error'],
+                ),
+            )
+            return result
+        error = match_fixture_scope_mismatch(line)
         if error:
             line = next(lines)
             result.append(line)
-            file_location = match_file_location(line)
-            if file_location:
-                file_path = file_location['file_path']
+            location = match_file_location(line)
+            if location:
+                file_path = location['file_path']
                 if root_dir:
                     file_path = os.path.join(root_dir, file_path)
                 result.append(
                     make_error_format(
                         file_path,
-                        file_location['line_no'],
+                        location['line_no'],
                         error,
                     ),
                 )
-            else:
-                return result
+            return result
     return result
 
 
