@@ -42,7 +42,7 @@ These requirement are optional but improve the plugin usage:
         (https://github.com/tpope/vim-dispatch).
 
 ==============================================================================
-SUPPORTED TEST RUNNERS                                  *runners-python*
+SUPPORTED TEST RUNNERS                                  *runners-supported*
 
     - Python
         * nose (http://nose.readthedocs.org)
@@ -52,7 +52,7 @@ SUPPORTED TEST RUNNERS                                  *runners-python*
 PYTHON                                                  *runners-python*
 
 
-The plugin needs to be aware of *Python* virtual environment required to run
+The plugin needs to be aware of `Python` virtual environment required to run
 tests (if any).
 
 ------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ If none of these are available, tests will be ran in system environment.
 Expected virtualenv configuration filename is *.venv*. It should be located at
 the root of the project.
 
-Example: Set Python {virtualenv} configuration in project X , at the
+Example: Set `Python` {virtualenv} configuration in project X , at the
 root of the project:
 
  \.venv             <= vim-runners virtualenv config  file
@@ -90,7 +90,7 @@ The content of the file would simply be :
 If you don't want to have extra file polluting your project, a local git
 configuration can be used.
 
-For example, to configure Python {virtualenv} folder which is located at \{git
+For example, to configure `Python` {virtualenv} folder which is located at \{git
 root}\venv:
 
     git config --local vim-runners.venv venv
@@ -99,7 +99,7 @@ root}\venv:
 2. Select Python runner~
 
                                                          *'g:runners_python'*
-To select runner for *Python* , use this global option.
+To select runner for `Python` , use this global option.
 
 Example: let g:runners_python = 'nose'
 
