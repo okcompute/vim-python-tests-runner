@@ -12,4 +12,4 @@ CompilerSet efm=%f:%l\ <%m>
 " Assign a python script to 'makeprg'. It will launch the runner and transform
 " its output for the configured 'errorformat' above.
 let s:path="python ".expand("<sfile>:p:h")
-let &l:makeprg=s:path."/run.py ".g:runners_python
+let &l:makeprg=s:path."/run.py ".g:python_tests_runner

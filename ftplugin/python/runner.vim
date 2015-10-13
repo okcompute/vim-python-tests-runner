@@ -1,11 +1,11 @@
-" ftplugin/python/runners.vim
+" ftplugin/python/runner.vim
 " Author: Pascal Lalancette (okcompute@icloud.com)
 
 " Only do this when not done yet for this buffer
-if exists("b:vim_runners_ftplugin")
+if exists("b:runner_ftplugin")
     finish
 endif
-let b:vim_runners_ftplugin = 1
+let b:runner_ftplugin = 1
 
 if !has('python')
     echo "Error: Required vim compiled with +python"
@@ -13,5 +13,5 @@ if !has('python')
 endif
 
 " Set compiler
-compiler runners
+compiler runner
 

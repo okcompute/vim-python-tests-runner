@@ -1,7 +1,8 @@
-vim-runners
-===========
+vim-python-tests-runner
+=======================
 
-An improved vim compiler for *running* tests.
+An improved vim compiler for *running* tests written in Python programming
+language.
 
 Introduction
 ============
@@ -21,9 +22,6 @@ Main features:
 Supported test runners
 ======================
 
-Python
-------
-
 * nose (http://nose.readthedocs.org)
 * pytest (http://pytest.org)
 
@@ -34,45 +32,44 @@ Requirements
 For this plugin to have some value, you need this requirement to be installed in
 your environment:
 
-- python
+- python (2.x or 3.x)
 
 These requirement are optional but improve the plugin usage:
 
 - git
-- [vim-dispatch](https://github.com/tpope/vim-dispatch) by Tim Pope to run tests asynchronously
+- [vim-dispatch](https://github.com/tpope/vim-dispatch) by Tim Pope to run tests
+  asynchronously
 
-Configuration
-=============
-
-Plugin support two configuration modes.
-
-1. Through a configuration file `.runners` (usually located at the root of your
-   project).
-1. Through git configuration (`vim-runners.xxxxx`) in your git repository
-
-See the plugin documentation for more all available configurations .
-
-Python
-======
 
 VirtualEnv Configuration
-------------------------
+========================
 
 Python virtual environment can be configured on a per-project basis through
 either through a *git* option or a project configuration file. See documentation
 for more details.
 
+Plugin support three venv configuration methods.
+
+1. Through a configuration file `.venv` (usually located at the root of your
+   project).
+1. Through git configuration (`vim-python-tests-runner.xxxxx`) in your git
+   repository
+1. $VIRTUALENV environment variable.
+
+See the plugin documentation for more all available configurations .
 
 Usage
 =====
 
 ### `:RunTest`
 
-Run the current test surrounding the cursor position.  Otherwise, run all tests in the scope the cursor is located in (i.e. test case or module).
+Run the current test surrounding the cursor position.  Otherwise, run all tests
+in the scope the cursor is located in (i.e. test case or module).
 
 ### `:RunCase`
 
-Run all tests found in the test case surrounding the cursor position. If cursor is outside a test case scope, all tests for the module (buffer) are run.
+Run all tests found in the test case surrounding the cursor position. If cursor
+is outside a test case scope, all tests for the module (buffer) are run.
 
 ### `:RunModule`
 
@@ -84,14 +81,15 @@ Run all tests found in the git repository of the edited buffer.
 
 ### Running last test
 
-The plugin will *memorize* the last test, case or module used for these three commands:
+The plugin will *memorize* the last test, case or module used for these three
+commands:
 
     :RunTest
     :RunCase
     :RunModule
 
 If any of these commands are called outside of a python test module (any python
-module name not starting with "test_...") the last test, case or module will be
+module name not starting with "test...") the last test, case or module will be
 used. This is really useful for example when doing TDD. You write the test. Call
 `:RunTest`. It fails. Switch focus to source module. Add code. Call `:RunTest`.
 etc.
@@ -112,4 +110,5 @@ Example:
 License
 =======
 
-Copyright © Pascal Lalancette. Distributed under the same terms as Vim itself. See :help license.
+Copyright © Pascal Lalancette. Distributed under the same terms as Vim itself.
+See :help license.

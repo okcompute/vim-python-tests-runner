@@ -1,4 +1,4 @@
-" plugin/runners.vim
+" plugin/runner.vim
 " Author: Pascal Lalancette (okcompute@icloud.com)
 
 if !has('python')
@@ -7,8 +7,8 @@ if !has('python')
 endif
 
 " Default runner is `pytest`
-if !exists("g:runners_python")
-    let g:runners_python= 'pytest'
+if !exists("g:python_tests_runner")
+    let g:python_tests_runner= 'pytest'
 endif
 
 " Command Mappings
@@ -17,17 +17,17 @@ endif
 function! s:set_run_commands()
     if expand("%:r") =~ "test_.*"
         " Filename match test file pattern. Inject normal 'run' commands.
-        command! -buffer -bang RunTest :call runners#run_test(<bang>0)
-        command! -buffer -bang RunCase :call runners#run_case(<bang>0)
-        command! -buffer -bang RunModule :call runners#run_module(<bang>0)
+        command! -buffer -bang RunTest :call runner#run_test(<bang>0)
+        command! -buffer -bang RunCase :call runner#run_case(<bang>0)
+        command! -buffer -bang RunModule :call runner#run_module(<bang>0)
     else
         " For no-test files, run 'remembered' test.
-        command! -buffer -bang RunTest :call runners#run_last_test(<bang>0)
-        command! -buffer -bang RunCase :call runners#run_last_case(<bang>0)
-        command! -buffer -bang RunModule :call runners#run_last_module(<bang>0)
+        command! -buffer -bang RunTest :call runner#run_last_test(<bang>0)
+        command! -buffer -bang RunCase :call runner#run_last_case(<bang>0)
+        command! -buffer -bang RunModule :call runner#run_last_module(<bang>0)
     endif
     " RunAllTest is available everywhere
-    command! -bang RunAllTests :call runners#run_all(<bang>0)
+    command! -bang RunAllTests :call tests#runner#run_all(<bang>0)
 endfunction
 
 " For python file, set commands relative to file being a test module or not.
