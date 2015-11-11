@@ -43,8 +43,7 @@ def match_fixture_scope_mismatch(line):
     :returns: A dictionary where the key `error` holds the error description. If
         not matched, the dictionary is empty.
     """
-    result = match_pattern(r"ScopeMismatch: (?P<error>.*)$", line)
-    return result.get('error')
+    return match_pattern(r"ScopeMismatch: (?P<error>.*)$", line).get('error')
 
 
 def match_file_location(line):
@@ -57,7 +56,7 @@ def match_file_location(line):
     :returns: A dictionary where the key `file_path` holds the file path and the
         key `line_no` the line number. If not matched, the dictionary is empty.
     """
-    return match_pattern(r"(?P<file_path>\S+):(?P<line_no>\d+):\s.*$", line)
+    return match_pattern(r"(?P<file_path>\S+):(?P<line_no>\d+)(:| in)\s.*$", line)
 
 
 def match_error(line):
@@ -69,7 +68,8 @@ def match_error(line):
     :returns: A dictionary where the key `error` holds the error description. If
         not matched, the dictionary is empty.
     """
-    return match_pattern(r"E\s+(?P<error>.*)$", line)
+    return match_pattern(r"E\s+(?P<error>.*)$", line).get('error')
+
 
 match_failure = match_error
 """
@@ -151,7 +151,7 @@ def parse_failure(lines):
                 make_error_format(
                     location['file_path'],
                     location['line_no'],
-                    failure['error'],
+                    failure,
                 ),
             )
             break
@@ -214,11 +214,17 @@ def parse_fixture_error(root_dir, lines):
     """
     result = []
     file_location = None
+    stderr_call = re.compile("-* Captured stderr setup -*")
+
     for line in lines:
         result.append(line)
         # File location  can come first if the fixture error is a 'fixture not
         # found' error type.
         location = match_fixture_not_found_file_location(line)
+        if location:
+            file_location = location
+            continue
+        location = match_file_location(line)
         if location:
             file_location = location
             continue
@@ -248,6 +254,10 @@ def parse_fixture_error(root_dir, lines):
                         error,
                     ),
                 )
+            return result
+        # error = match_error(line)
+        if stderr_call.match(line):
+            result.extend(parse_traceback(lines))
             return result
     return result
 

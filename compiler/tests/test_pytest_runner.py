@@ -2,6 +2,7 @@
 # encoding: utf-8
 
 import unittest
+from platform import system
 
 from runners.pytest import (
     match_conftest_error,
@@ -46,14 +47,14 @@ class TestPytestRunner(unittest.TestCase):
 
     def test_match_error(self):
         input = r"E   NameError: name 'asdfasdf' is not defined"
-        expected = {"error": "NameError: name 'asdfasdf' is not defined"}
+        expected = "NameError: name 'asdfasdf' is not defined"
         result = match_error(input)
         self.assertEqual(expected, result)
 
     def test_match_error_when_no_match(self):
         input = r"application/tests/test_dal.py:19: in <module>"
         result = match_error(input)
-        self.assertEqual({}, result)
+        self.assertIsNone(result)
 
     def test_match_conftest_error(self):
         input = "E   _pytest.config.ConftestImportFailure: (local('/test/conftest.py'), (<class 'ImportError'>, ImportError(\"No module named 'unknown'\",), <traceback object at 0x104226f88>))"
@@ -386,6 +387,8 @@ class TestPytestRunner(unittest.TestCase):
             r"/Users/okcompute/Developer/Git/OkBudgetBackend/okbudget/tests/conftest.py:26 <You tried to access the 'function' scoped fixture 'function_fixture' with a 'session' scoped request object, involved factories>",
             r"okbudget/tests/conftest.py:21:  def function_fixture()",
         ]
+        if system().lower() == 'windows':
+            expected[14] = r"/Users/okcompute/Developer/Git/OkBudgetBackend\okbudget/tests/conftest.py:26 <You tried to access the 'function' scoped fixture 'function_fixture' with a 'session' scoped request object, involved factories>"
         result = parse(input)
         self.assertEqual(expected, result)
 
@@ -647,6 +650,106 @@ class TestPytestRunner(unittest.TestCase):
             r"F:\git\my_package\my_package\tests\dal\test_something.py:1245 <fixture 'populate_redis_with_progression' not found>",
             r"        available fixtures: pytestconfig, goals_configuration, mutable_service, force_default_settings, somethings, tmpdir, registered_somethings, populate_redis, redis, completed_somethings, service, something_dictionaries, mock_utcnow, registered_somethings_with_progression, load_service, submissions, goal_instances, somethings_with_registration, use_redis, use_mongo, dal, recwarn, monkeypatch, invalid_something_instances, registered_populations_context, registered_principal_ids, flush_redis, cov, something_instances, reward_instances, somethings_with_progression, capfd, capsys",
             r"        use 'py.test --fixtures [testpath]' for help on them.",
+        ]
+        self.maxDiff = None
+        result = parse(input)
+        self.assertEqual(expected, result)
+
+    def test_parse_import_error_exception(self):
+        input = [
+            r'============================= test session starts =============================',
+            r'platform win32 -- Python 2.7.8 -- py-1.4.30 -- pytest-2.7.2',
+            r'rootdir: F:\git\rdv_challenge, inifile: setup.cfg',
+            r'plugins: cache, cov, flake8',
+            r'collected 54 items',
+            r'',
+            r'test_private.py E',
+            r'',
+            r'=================================== ERRORS ====================================',
+            r'___ ERROR at setup of TestPrivateRestApi.test_post_challenge_missing_title ____',
+            r'conftest.py:179: in load_service',
+            r'    \'scripts\',',
+            r'rendezvous_testing.py:395: in load_service_in_rendezvous',
+            r'    builders = global_services.load_services(service_config)',
+            r'..\..\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py:307: in load_services',
+            r'    service_module, node_loaders, web_loaders, status_function)',
+            r'..\..\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py:813: in _invoke_service_loaders',
+            r'    service_module, function_name, True)',
+            r'..\..\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py:618: in _call_init_function',
+            r'    func(builder)',
+            r'..\__init__.py:73: in init_web_service',
+            r'    from .bindings.rest import private',
+            r'..\bindings\rest\private.py:11: in <module>',
+            r'    import caca',
+            r'E   ImportError: No module named caca',
+            r'---------------------------- Captured stderr setup ----------------------------',
+            r'ERROR:root:File "../../environment_service_configuration.xml" not found in "F:\git\rdv_challenge\rdv_challenge\tests\bindings\rest".',
+            r'WARNING:root:OperationMode setting not found: set value to \'normal\'.',
+            r'F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\version.py:2: UserWarning: deprecated version.py file, use __version__.py instead with pkg_ressources.parse_version()',
+            r'  warnings.warn(\'deprecated version.py file, use __version__.py instead with pkg_ressources.parse_version()\')',
+            r'ERROR:service_loading:_call_init_function: Exception while executing init function \'init_web_service\' for service \'Challenge\'.',
+            r'ERROR:service_loading:Failed to load service \'Challenge\'.',
+            r'Traceback (most recent call last):',
+            r'  File "F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py", line 307, in load_services',
+            r'    service_module, node_loaders, web_loaders, status_function)',
+            r'  File "F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py", line 813, in _invoke_service_loaders',
+            r'    service_module, function_name, True)',
+            r'  File "F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py", line 618, in _call_init_function',
+            r'    func(builder)',
+            r'  File "F:\git\rdv_challenge\rdv_challenge\__init__.py", line 73, in init_web_service',
+            r'    from .bindings.rest import private',
+            r'  File "F:\git\rdv_challenge\rdv_challenge\bindings\rest\private.py", line 11, in <module>',
+            r'    import caca',
+            r'ImportError: No module named caca',
+            r'=========================== 1 error in 0.24 seconds ===========================',
+        ]
+        expected = [
+            r'============================= test session starts =============================',
+            r'platform win32 -- Python 2.7.8 -- py-1.4.30 -- pytest-2.7.2',
+            r'rootdir: F:\git\rdv_challenge, inifile: setup.cfg',
+            r'plugins: cache, cov, flake8',
+            r'collected 54 items',
+            r'',
+            r'test_private.py E',
+            r'',
+            r'=================================== ERRORS ====================================',
+            r'___ ERROR at setup of TestPrivateRestApi.test_post_challenge_missing_title ____',
+            r'conftest.py:179: in load_service',
+            r'    \'scripts\',',
+            r'rendezvous_testing.py:395: in load_service_in_rendezvous',
+            r'    builders = global_services.load_services(service_config)',
+            r'..\..\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py:307: in load_services',
+            r'    service_module, node_loaders, web_loaders, status_function)',
+            r'..\..\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py:813: in _invoke_service_loaders',
+            r'    service_module, function_name, True)',
+            r'..\..\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py:618: in _call_init_function',
+            r'    func(builder)',
+            r'..\__init__.py:73: in init_web_service',
+            r'    from .bindings.rest import private',
+            r'..\bindings\rest\private.py:11: in <module>',
+            r'    import caca',
+            r'E   ImportError: No module named caca',
+            r'---------------------------- Captured stderr setup ----------------------------',
+            r'ERROR:root:File "../../environment_service_configuration.xml" not found in "F:\git\rdv_challenge\rdv_challenge\tests\bindings\rest".',
+            r'WARNING:root:OperationMode setting not found: set value to \'normal\'.',
+            r'F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\version.py:2: UserWarning: deprecated version.py file, use __version__.py instead with pkg_ressources.parse_version()',
+            r'  warnings.warn(\'deprecated version.py file, use __version__.py instead with pkg_ressources.parse_version()\')',
+            r'ERROR:service_loading:_call_init_function: Exception while executing init function \'init_web_service\' for service \'Challenge\'.',
+            r'ERROR:service_loading:Failed to load service \'Challenge\'.',
+            r'Traceback (most recent call last):',
+            r'  File "F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py", line 307, in load_services',
+            r'    service_module, node_loaders, web_loaders, status_function)',
+            r'  File "F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py", line 813, in _invoke_service_loaders',
+            r'    service_module, function_name, True)',
+            r'  File "F:\git\rdv_challenge\.tox\rdv3.0.7\lib\site-packages\rendezvous\core\Service\ServiceHost.py", line 618, in _call_init_function',
+            r'    func(builder)',
+            r'  File "F:\git\rdv_challenge\rdv_challenge\__init__.py", line 73, in init_web_service',
+            r'    from .bindings.rest import private',
+            r'  File "F:\git\rdv_challenge\rdv_challenge\bindings\rest\private.py", line 11, in <module>',
+            r'    import caca',
+            r'ImportError: No module named caca',
+            r'F:\git\rdv_challenge\rdv_challenge\bindings\rest\private.py:11 <ImportError: No module named caca>',
+            r'=========================== 1 error in 0.24 seconds ===========================',
         ]
         self.maxDiff = None
         result = parse(input)

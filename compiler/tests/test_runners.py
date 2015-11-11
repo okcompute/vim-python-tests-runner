@@ -35,8 +35,8 @@ class TestRunners(unittest.TestCase):
             "nosetests",
         )
 
-    def test_pytest__command(self):
-        if system() == 'windows':
+    def test_pytest_command(self):
+        if system().lower() == 'windows':
             self.assertEqual(
                 get_command('pytest'),
                 "py.test.exe --tb=short",
