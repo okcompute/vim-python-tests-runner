@@ -238,9 +238,13 @@ endfunction
 function! s:make_interactive_command()
     let l:cmd = ":!"
     if exists(":Start")
-        let l:cmd = ":Start "
+        if has('win32')
+            let l:cmd = "!Start cmd /c "
+        else
+            let l:cmd = "Start "
+        endif
     elseif has('win32')
-        let l:cmd = ":!start "
+        let l:cmd = "!start "
     endif
     if g:python_tests_runner == 'nose'
         return l:cmd."nosetests -s "
@@ -276,7 +280,7 @@ function! s:run(interactive, get_test_method) abort
             " In case of test error, introduce a pause in the interactive
             " shell so the user can see what the error was!
             if has('win32')
-                let l:args = l:args." || pause"
+                let l:args = l:args." & pause"
             else
                 let l:msg = "\"Press any key to continue...\""
                 let l:args = l:args." || read -p ".l:msg
