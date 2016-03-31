@@ -1,8 +1,8 @@
 vim-python-tests-runner
 =======================
 
-An improved vim compiler for *running* tests written in Python programming
-language directly inside *Vim*.
+An improved vim compiler for *running* tests written in Python directly inside
+*Vim*.
 
 Introduction
 ============
