@@ -12,7 +12,9 @@ from __future__ import print_function
 
 import os
 import re
-from itertools import chain
+from itertools import (
+    chain,
+)
 from platform import system
 
 from . import (
@@ -120,33 +122,113 @@ def match_fixture_not_found_error(line):
     return match_pattern(r"^\s+(?P<error>fixture '.*' not found)$", line)
 
 
-def parse_failure(lines):
+def parse_fixture_error(root_dir, lines):
     """
-    Iterate lines to find one *pytest* error or failure. Once the error or
-    failure, the iteration is stopped (i.e. iterator is not fully consumed).
+    Parse *pytest* output of a *fixture error* section.
 
-    :param lines: A list of strings to pattern match against.
+    :param root_dir: Tested project root directory
+    :param lines: List of lines from a pytest error report.
 
-    :returns: A list of string where an additional element is added when the
-        filename and error have been found.
+    :returns: *pytest* output augmented with specially formatted lines adapted
+        to this plugin errorformat which will populate Vim clist.
     """
-    location = None
     result = []
+    file_location = None
+    stderr_call = re.compile("-{2,} Captured stderr setup -{2,}")
 
-    for line in lines:
+    lines_ = iter(lines)
+    for line in lines_:
         result.append(line)
-        conftest_error = match_conftest_error(line)
-        if conftest_error:
+        # File location  can come first if the fixture error is a 'fixture not
+        # found' error type.
+        location = match_fixture_not_found_file_location(line)
+        if location:
+            file_location = location
+            continue
+        location = match_file_location(line)
+        if location:
+            file_location = location
+            continue
+        error = match_fixture_not_found_error(line)
+        if error:
             result.append(
                 make_error_format(
-                    conftest_error['file_path'],
-                    1,
-                    conftest_error['error'],
+                    file_location.get('file_path', ""),
+                    file_location.get('line_no', ""),
+                    error['error'],
                 ),
             )
             break
-        failure = match_failure(line)
-        if failure and location:
+        error = match_fixture_scope_mismatch(line)
+        if error:
+            line = next(lines_)
+            result.append(line)
+            location = match_file_location(line)
+            if location:
+                file_path = location['file_path']
+                if root_dir:
+                    file_path = os.path.join(root_dir, file_path)
+                result.append(
+                    make_error_format(
+                        file_path,
+                        location['line_no'],
+                        error,
+                    ),
+                )
+            break
+        if stderr_call.match(line):
+            result.extend(parse_traceback(lines_))
+            break
+
+    # Consume left over prior returning
+    result.extend(lines_)
+    return result
+
+
+def parse_conftest_error(lines):
+    """
+    Parse conftest import error (`ConftestImportFailure`) coming from an error
+    report.
+
+    :param lines: List of lines from a pytest error report.
+
+    :returns: The original lines augmented with an additional error *marker*.
+    """
+    result = []
+    lines_ = iter(lines)
+    for line in lines_:
+        result.append(line)
+        # File location  can come first if the fixture error is a 'fixture not
+        # found' error type.
+        error = match_conftest_error(line)
+        if error:
+            result.append(
+                make_error_format(
+                    error.get('file_path', ""),
+                    1,
+                    error['error'],
+                ),
+            )
+            break
+    result.extend(lines_)
+    return result
+
+
+def parse_test_error(lines):
+    """
+    Parse test error coming from an error report.
+
+    :param lines: List of lines from a pytest error report.
+
+    :returns: The original lines augmented with an additional error *marker*.
+    """
+    result = []
+    lines_ = iter(lines)
+    location = {'file_path': '', 'line_no': 1}
+    for line in lines_:
+        result.append(line)
+        failure = match_error(line)
+        if failure and location['file_path']:
             result.append(
                 make_error_format(
                     location['file_path'],
@@ -159,10 +241,90 @@ def parse_failure(lines):
             file_location = match_file_location(line)
             if file_location:
                 location = file_location
+    result.extend(lines_)
     return result
 
 
-parse_error = parse_failure
+def parse_error(root_dir, lines):
+    """
+    Parse an error coming from a pytest error report.
+
+    :param lines: List of lines from a pytest error report.
+
+    :returns: The original lines augmented with an additional error *marker*.
+    """
+    FIXTURE_ERROR = re.compile("_{2,} ERROR at setup of .{2,}")
+    CONFTEST_IMPORT_ERROR = re.compile("_{2,} ERROR collecting _{2,}")
+
+    if FIXTURE_ERROR.match(lines[0]):
+        result = parse_fixture_error(root_dir, lines)
+    elif CONFTEST_IMPORT_ERROR.match(lines[0]):
+        result = parse_conftest_error(lines)
+    else:
+        result = parse_test_error(lines)
+
+    if len(lines) == len(result):
+        result.append(
+            make_error_format(
+                'Unknown',
+                'Unknown',
+                "An error was found but could not be parsed. This is probably "
+                "a missing error pattern. Please post an issue on GitHub.",
+            ),
+        )
+
+    return result
+
+
+def parse_failure(lines):
+    """
+    Parse a failure coming from a pytest failure report.
+
+    :param lines: List of lines from a pytest failure report.
+
+    :returns: The original lines augmented with an additional error *marker*.
+    """
+    lines_ = iter(lines)
+    result = [next(lines_)]
+    location = {'file_path': 'Unknown', 'line_no': 'Unknown'}
+    stderr_call = re.compile("-{2,} Captured stderr call -{2,}")
+
+    for line in lines_:
+        result.append(line)
+        failure = match_failure(line)
+        if failure and location['file_path'] != 'Unknown':
+            result.append(
+                make_error_format(
+                    location['file_path'],
+                    location['line_no'],
+                    failure,
+                ),
+            )
+            break
+        else:
+            file_location = match_file_location(line)
+            if file_location:
+                location = file_location
+
+    for line in lines_:
+        result.append(line)
+        if stderr_call.match(line):
+            result.extend(parse_traceback(lines_))
+            break
+
+    result.extend(lines_)
+    if len(lines) == len(result):
+        # Nothing was found! This is probably because of
+        result.append(
+            make_error_format(
+                location['file_path'],
+                location['line_no'],
+                "An error was found but could not be parsed. This is probably "
+                "a missing error pattern. Please post an issue on GitHub.",
+            ),
+        )
+
+    return result
 
 
 def parse_session_failure(lines):
@@ -202,112 +364,135 @@ def parse_session_failure(lines):
     )
 
 
-def parse_fixture_error(root_dir, lines):
+def group_lines(lines, delimiter):
     """
-    Parse *pytest* output of a *fixture error* section.
+    Group a list of lines into sub-lists. The list is split at line matching the
+    `delimiter` pattern.
 
-    :param root_dir: Tested project root directory
-    :param lines: list of *pytest* error output lines.
+    :param lines: Lines of string.
+    :parma delimiter: Regex matching the delimiting line pattern.
 
-    :returns: *pytest* output augmented with specially formatted lines adapted
-        to this plugin errorformat which will populate Vim clist.
+    :returns: A list of lists.
     """
+    if not lines:
+        return []
+    lines_ = iter(lines)
+    delimiter_ = re.compile(delimiter)
     result = []
-    file_location = None
-    stderr_call = re.compile("-* Captured stderr setup -*")
-
-    for line in lines:
-        result.append(line)
-        # File location  can come first if the fixture error is a 'fixture not
-        # found' error type.
-        location = match_fixture_not_found_file_location(line)
-        if location:
-            file_location = location
-            continue
-        location = match_file_location(line)
-        if location:
-            file_location = location
-            continue
-        error = match_fixture_not_found_error(line)
-        if error:
-            result.append(
-                make_error_format(
-                    file_location.get('file_path', ""),
-                    file_location.get('line_no', ""),
-                    error['error'],
-                ),
-            )
-            return result
-        error = match_fixture_scope_mismatch(line)
-        if error:
-            line = next(lines)
-            result.append(line)
-            location = match_file_location(line)
-            if location:
-                file_path = location['file_path']
-                if root_dir:
-                    file_path = os.path.join(root_dir, file_path)
-                result.append(
-                    make_error_format(
-                        file_path,
-                        location['line_no'],
-                        error,
-                    ),
-                )
-            return result
-        # error = match_error(line)
-        if stderr_call.match(line):
-            result.extend(parse_traceback(lines))
-            return result
+    result.append([next(lines_)])
+    for line in lines_:
+        if delimiter_.match(line):
+            result.append([])
+        result[-1].append(line)
     return result
+
+
+def parse_sections(lines):
+    """
+    Parse pytest output and group lines per section (Errors, failures,
+    summary,etc.).
+
+    :param lines: pytest output segmented in lines
+
+    :returns: A dictionary where keys are section names and values are the
+        grouped line for the section.
+    """
+    section_types = {
+        'session': re.compile(r"={2,} test session starts ={2,}"),
+        'errors': re.compile(r"={2,} ERRORS ={2,}"),
+        'failures': re.compile(r"={2,} FAILURES ={2,}"),
+        'summary': re.compile(r"={2,} .* failed in .* seconds ={2,}"),
+    }
+    sections = {}
+    for lines in group_lines(lines, r"={2,} .* ={2,}"):
+        for section_type, regex in section_types.iteritems():
+            if regex.match(lines[0]):
+                sections[section_type] = lines
+                break
+    return sections
+
+
+def parse_errors(root_dir, lines):
+    """
+    Parse and add special markers to all error found in the `ERRORS` section.
+
+    :param root_dir: This is the test root dir found in the pytest report.
+    :param lines: All reported output lines from the `ERRORS` section.
+
+    :returns: The original input list augmented with special markers where
+        errors were found
+    """
+    result = [lines.pop(0)]
+    for error in group_lines(lines, r"_{2,} (?<!Captured stder call).* _{2,}"):
+        result.extend(parse_error(root_dir, error))
+    return result
+
+
+def parse_failures(lines):
+    """
+    Parse and add special markers to all failures found in the `FAILURES`
+    section.
+
+    :param root_dir: This is the test root dir found in the pytest report.
+    :param lines: All reported output lines from the `FAILURES` section.
+
+    :returns: The original input list augmented with special markers where
+        errors were found
+    """
+    result = [lines.pop(0)]
+    for failure in group_lines(lines, r"_{2,} (?<!Captured stder call).* _{2,}"):
+        result.extend(parse_failure(failure))
+    return result
+
+
+def parse_session(lines):
+    """
+    Parse the pytest `session` section to extract the `root dir` of the test
+    session.
+
+    :param lines: All reported output lines from the `test session start`
+        section.
+
+    :returns: The test session root path.
+    """
+    session = re.compile(r"={2,} test session starts ={2,}")
+
+    if not session.match(lines[0]):
+        return None
+
+    m = re.match(r"rootdir: (?P<root>.*), inifile: (?P<ini>.*)$", lines[2])
+    if not m:
+        return None
+    return m.group('root')
 
 
 def parse(lines):
     """
-    Parse a list of lines from *pytest* output and inject compatible *error
-    format* lines when errors are found..
+    Parse the pytest report.
 
-    :param lines: List of *pytest* error output lines.
+    :param lines: List of lines from the pytest report
 
-    :returns: *pytest* output augmented with specially formatted lines adapted to
-        this plugin *error format* which will populate Vim's clist.
+    :returns: The input lines augmented with special error markers the *Vim*
+        plugin will understand through a custom `errorformat` setting.
     """
-    if not lines:
-        return []
+    sections = parse_sections(lines)
 
-    result = []
-
-    if not re.match(r"=* test session starts =*", lines[0]):
+    if 'session' not in sections:
         return parse_session_failure(lines)
 
-    root_dir = None
-    m = re.match(r"rootdir: (?P<root>.*), inifile: (?P<ini>.*)$", lines[2])
-    if m:
-        root_dir = m.group('root')
+    result = sections['session']
+    root_dir = parse_session(sections['session'])
 
-    lines = iter(lines)
+    # Errors
+    if 'errors' in sections:
+        result.extend(parse_errors(root_dir, sections['errors']))
 
-    error = re.compile(r"_* ERROR collecting .* _*")
-    failure = re.compile(r"_* .* _*")
-    stderr_call = re.compile("-* Captured stderr call -*")
-    fixture_error = re.compile("_* ERROR at setup of .*")
+    # Failures
+    if 'failures' in sections:
+        result.extend(parse_failures(sections['failures']))
 
-    for line in lines:
-        result.append(line)
-        if error.match(line):
-            result.extend(
-                parse_error(lines),
-            )
-        elif stderr_call.match(line):
-            result.extend(
-                parse_traceback(lines),
-            )
-        elif fixture_error.match(line):
-            result.extend(
-                parse_fixture_error(root_dir, lines),
-            )
-        elif failure.match(line):
-            result.extend(
-                parse_failure(lines),
-            )
+    # Summary
+    if 'summary' in sections:
+        result.extend(sections['summary'])
+
     return result
