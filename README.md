@@ -2,12 +2,12 @@ vim-python-tests-runner
 =======================
 
 An improved vim compiler for *running* tests written in Python programming
-language.
+language directly inside *Vim*.
 
 Introduction
 ============
 
-This plugin improve on *Vim* compiler option for running tests.
+This plugin improve on *Vim* compiler (`:make`) option for running tests.
 
 Main features:
 
