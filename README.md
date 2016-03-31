@@ -45,18 +45,14 @@ VirtualEnv Configuration
 ========================
 
 Python virtual environment can be configured on a per-project basis through
-either through a *git* option or a project configuration file. See documentation
-for more details.
+three venv configuration methods.
 
-Plugin support three venv configuration methods.
-
-1. Through a configuration file `.venv` (usually located at the root of your
-   project).
-1. Through git configuration (`vim-python-tests-runner.xxxxx`) in your git
-   repository
+1. A configuration file `.venv` (usually located at the root of your project).
+1. A specific git configuration (`vim-python-tests-runner.venv`) in your git
+   repository.
 1. $VIRTUALENV environment variable.
 
-See the plugin documentation for more all available configurations .
+See the plugin documentation for more details.
 
 Usage
 =====
@@ -89,18 +85,16 @@ commands:
     :RunModule
 
 If any of these commands are called outside of a python test module (any python
-module name not starting with "test...") the last test, case or module will be
-used. This is really useful for example when doing TDD. You write the test. Call
-`:RunTest`. It fails. Switch focus to source module. Add code. Call `:RunTest`.
-etc.
+module name not starting with "test..."), the last test, test case or test
+module that ran will be used. This is really useful for example when doing TDD.
+You write the test. Call `:RunTest`. It fails. Switch focus to source module.
+Add code.  Call `:RunTest`.  etc.
 
 ### Interactive commands
 
 All **:Run...** command can also be launched in interactive mode. This will run
 tests synchronously in an external console (if possible). This is useful for
-debugging your program or tests. For instance, using `ipdb` inside *gVim* or
-*MacVim* basic shell does not support coloring! This is an attempt to fix this
-problem.
+debugging your program or tests.
 
 Example:
 
