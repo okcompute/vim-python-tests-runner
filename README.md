@@ -22,8 +22,8 @@ Main features:
 Supported test runners
 ======================
 
-* nose (http://nose.readthedocs.org)
 * pytest (http://pytest.org)
+* nose (http://nose.readthedocs.org) [*Deprecated*]
 
 
 Requirements
