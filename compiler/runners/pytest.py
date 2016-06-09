@@ -405,7 +405,7 @@ def parse_sections(lines):
     }
     sections = {}
     for lines in group_lines(lines, r"={2,} .* ={2,}"):
-        for section_type, regex in section_types.iteritems():
+        for section_type, regex in section_types.items():
             if regex.match(lines[0]):
                 sections[section_type] = lines
                 break
