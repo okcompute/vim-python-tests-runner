@@ -102,7 +102,7 @@ EOF
 " git {{{
 
 function! s:read_virtualenv_config_from_git()
-    let l:venv =  system('git config vim-runners.venv')
+    let l:venv =  system('git config vim-python-tests-runner.venv')
     if v:shell_error
         throw "Configuration not found. Git not available or virtualenv configuration not set."
     endif
