@@ -1,3 +1,5 @@
+**This repository is now archived and deprecatd. I recommend using [vim-test](https://github.com/vim-test/vim-test) instead. `vim-test` offers the same features but also supports multiple languages.**
+
 vim-python-tests-runner
 =======================
 
